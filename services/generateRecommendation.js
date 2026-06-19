@@ -29,7 +29,6 @@ function sanitizeRisk(risk) {
 }
 
 async function generateRecommendation(scanResult) {
-
   const prompt = `
 SYSTEM ROLE:
 You are a senior cryptography auditor and post-quantum migration specialist.
@@ -50,6 +49,15 @@ CRITICAL ENFORCEMENT RULES (MANDATORY)
    - Key exchange
    - Signature algorithm
    - Key size
+
+------------------------------------------------------------
+ANTI-REPETITIVE & LINGUISTIC DIVERSITY RULES (CRITICAL)
+------------------------------------------------------------
+
+- DO NOT use boilerplate phrasing or repeating introductory templates (e.g. "Based on the scan results...", "Legacies such as...", "To secure your node...").
+- Vary your vocabulary, sentence structure, active/passive voice, and technical phrasing.
+- Synthesize an organic technical summary tailored specifically to the unique properties of the asset hostname: "${scanResult.host || "this endpoint"}".
+- Ensure that different assets with identical configuration issues receive distinctly written advice to prevent repetitive user reports.
 
 ------------------------------------------------------------
 ANTI-GENERIC ENFORCEMENT
@@ -75,6 +83,11 @@ Key Exchange: ${scanResult.negotiated?.keyExchange || "Unknown"}
 Signature Algorithm: ${scanResult.certificate?.signatureAlgorithm || "Unknown"}
 Key Size: ${scanResult.certificate?.publicKey?.size || "Unknown"}
 PQC Score: ${scanResult.pqcReadyScore || 0}
+Weak Ciphers: ${scanResult.weakCiphers?.join(", ") || "None"}
+Vulnerabilities: ${scanResult.vulnerabilities?.join(", ") || "None"}
+PFS Supported: ${scanResult.pfsSupported ? "Yes" : "No"}
+Self-Signed Certificate: ${scanResult.certificate?.selfSigned ? "Yes" : "No"}
+Certificate Expiry: ${scanResult.certificate?.expires || "Unknown"}
 
 ------------------------------------------------------------
 WEAKNESS MAPPING RULES (MANDATORY)
@@ -157,7 +170,7 @@ RESPONSE FORMAT
       "https://api.groq.com/openai/v1/chat/completions",
       {
         model: "llama-3.1-8b-instant",
-        temperature: 0.5,
+        temperature: 0.75,
         messages: [
           {
             role: "user",

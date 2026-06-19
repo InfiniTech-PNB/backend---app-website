@@ -14,6 +14,7 @@ const ScanResult = require("../models/ScanResult");
 const Cbom = require("../models/Cbom");
 const cbomToHtml = require("../services/cbomToHtml");
 const generatePdf = require("../services/generatePdf");
+const cbomToCsv = require("../services/cbomToCsv");
 require("dotenv").config();
 const { toCamel, toSnake } = require("../utils/caseConverter");
 
@@ -241,6 +242,76 @@ router.get("/:scanId/cbom/pdf", async (req, res) => {
     console.error(err);
     res.status(500).json({
       error: "Failed to generate PDF"
+    });
+  }
+});
+
+/**
+ * @route GET /api/cbom/:scanId/cbom/json
+ * @description Exports the CBOM report as a JSON file download.
+ * @param {string} scanId - The MongoDB ID of the Scan.
+ */
+router.get("/:scanId/cbom/json", async (req, res) => {
+  try {
+    const { mode } = req.query;
+    const query = { scanId: req.params.scanId };
+    if (mode) query.mode = (mode === "perAsset" || mode === "per_asset") ? "per_asset" : "aggregate";
+
+    const cbom = await Cbom.findOne(query);
+
+    if (!cbom) {
+      return res.status(404).json({
+        error: "CBOM not found"
+      });
+    }
+
+    const filename = `cbom-${cbom.mode}-${req.params.scanId.substring(0, 8)}.json`;
+    res.set({
+      "Content-Type": "application/json",
+      "Content-Disposition": `attachment; filename=${filename}`
+    });
+
+    res.send(JSON.stringify(cbom, null, 2));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: "Failed to generate JSON"
+    });
+  }
+});
+
+/**
+ * @route GET /api/cbom/:scanId/cbom/csv
+ * @description Exports the CBOM report as a CSV file download.
+ * @param {string} scanId - The MongoDB ID of the Scan.
+ */
+router.get("/:scanId/cbom/csv", async (req, res) => {
+  try {
+    const { mode } = req.query;
+    const query = { scanId: req.params.scanId };
+    if (mode) query.mode = (mode === "perAsset" || mode === "per_asset") ? "per_asset" : "aggregate";
+
+    const cbom = await Cbom.findOne(query);
+
+    if (!cbom) {
+      return res.status(404).json({
+        error: "CBOM not found"
+      });
+    }
+
+    const csvData = cbomToCsv(cbom);
+    const filename = `cbom-${cbom.mode}-${req.params.scanId.substring(0, 8)}.csv`;
+
+    res.set({
+      "Content-Type": "text/csv",
+      "Content-Disposition": `attachment; filename=${filename}`
+    });
+
+    res.send(csvData);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: "Failed to generate CSV"
     });
   }
 });

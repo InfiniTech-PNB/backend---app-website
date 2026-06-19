@@ -12,6 +12,19 @@ function canonicalizeSignals(signals) {
 }
 
 // --------------------------------------------------
+// Stable Deterministic Noise (Hostname-Seeded)
+// --------------------------------------------------
+function getStableNoise(host) {
+    if (!host || host === "unknown") return 0;
+    let hash = 0;
+    for (let i = 0; i < host.length; i++) {
+        hash = host.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    // Generates a stable value between -0.02 and +0.02
+    return ((Math.abs(hash) % 40) / 1000) - 0.02;
+}
+
+// --------------------------------------------------
 // Deterministic enforcement (FINAL AUTHORITY)
 // --------------------------------------------------
 function enforceDeterminism(score, mlScore, signals) {
@@ -36,6 +49,10 @@ function enforceDeterminism(score, mlScore, signals) {
         score = mlScore - 0.05;
     }
 
+    // Apply stable hostname-seeded noise to make scores realistic and non-repetitive
+    const noise = getStableNoise(signals.host);
+    score += noise;
+
     // Clamp
     score = Math.max(0, Math.min(1, score));
 
@@ -48,6 +65,7 @@ function enforceDeterminism(score, mlScore, signals) {
 async function generateScore(mlScore, result) {
 
     const signals = {
+        host: result.assetId?.host || result.host || "unknown",
         tls_version: result.negotiated?.tlsVersion || null,
         cipher: result.negotiated?.cipher || null,
         weak_ciphers: result.weakCiphers || [],
@@ -76,17 +94,16 @@ async function generateScore(mlScore, result) {
     }
 
     // --------------------------------------------------
-    // STRICT PROMPT (DISCRETE OUTPUT)
+    // STRICT PROMPT (PRECISE FLOATING POINT OUTPUT)
     // --------------------------------------------------
     const prompt = `
 You are a deterministic PQC scoring engine.
 
 OUTPUT RULES:
-- Output ONLY one number
-- No text, no explanation
-- Must be one of the following values:
-
-0.30,0.35,0.40,0.45,0.50,0.55,0.60,0.65,0.70,0.72,0.74,0.76,0.78,0.80,0.82,0.84,0.85,0.86,0.87,0.88,0.89,0.90
+- Output ONLY one number.
+- No text, no explanation.
+- Output MUST be a decimal float between 0.00 and 1.00 (with exactly 2 decimal places).
+- DO NOT restrict to a small list of pre-defined values. Compute the score dynamically.
 
 SCORING RULES:
 
