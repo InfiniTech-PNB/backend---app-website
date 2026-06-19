@@ -115,7 +115,7 @@ CLIENT (React/Vite)
 ## 📂 Project Structure
 
 ```text
-backend-pnb/
+backend---app-website/
 │
 ├── app.js                        # 🚪 Entry point — Express setup, route registration, global error handler
 │
@@ -200,7 +200,7 @@ Make sure the following are installed and running before you begin:
 
 ```bash
 git clone <repository-url>
-cd backend-pnb
+cd backend---app-website
 ```
 
 ### 2. Install Dependencies
