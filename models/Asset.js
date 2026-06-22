@@ -34,6 +34,11 @@ const AssetSchema = new mongoose.Schema({
       "ECOMMERCE", "WEB", "UNKNOWN"
     ],
     default: "UNKNOWN"
+  },
+
+  lastJobId: {
+    type: String,
+    required: false
   }
 });
 

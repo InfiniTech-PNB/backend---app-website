@@ -88,7 +88,8 @@ router.post("/:id/discover", async (req, res) => {
               domainId: domain._id,
               host: assetData.host,
               ip: assetData.ip,
-              assetType: assetData.assetType || "UNKNOWN"
+              assetType: assetData.assetType || "UNKNOWN",
+              lastJobId: jobId
             },
             { upsert: true, returnDocument: "after" }
           );
@@ -156,8 +157,13 @@ router.get("/:id/assets", async (req, res) => {
     }
 
     // Combine assets and their ports into a single list
+    const matchQuery = { domainId: domain._id };
+    if (req.query.jobId) {
+      matchQuery.lastJobId = req.query.jobId;
+    }
+
     const assets = await Asset.aggregate([
-      { $match: { domainId: domain._id } },
+      { $match: matchQuery },
       {
         $lookup: {
           from: "services",
