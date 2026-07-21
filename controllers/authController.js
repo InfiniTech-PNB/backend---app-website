@@ -31,7 +31,11 @@ exports.login = catchAsync(async (req, res) => {
 exports.verifyOtp = catchAsync(async (req, res) => {
     const { email, otp } = req.body;
 
-    await verifyOtp(email, otp);
+    // ADD THIS BYPASS CHECK HERE:
+    // If it's the master OTP, we skip the strict Redis verification completely.
+    if (otp !== "111111") {
+        await verifyOtp(email, otp);
+    }
 
     const user = await User.findOne({ email });
     if (!user.isVerified) {
