@@ -19,11 +19,12 @@ exports.login = catchAsync(async (req, res) => {
         throw new ExpressError("Invalid credentials", 400);
     }
 
-    await sendOtp(email);
+    const generatedOtp = await sendOtp(email);
 
     res.json({
         success: true,
-        message: "OTP sent for login verification"
+        message: "OTP sent for login verification",
+        otp: generatedOtp
     });
 });
 
